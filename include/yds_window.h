@@ -11,8 +11,6 @@ class ysWindowSystem;
 
 class ysWindow : public ysWindowSystemObject {
 public:
-    static const int MAX_NAME_LENGTH = 256;
-
     enum class WindowState {
         Visible,
         Hidden,
