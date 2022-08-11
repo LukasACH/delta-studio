@@ -15,6 +15,11 @@
 
 #include "../include/yds_file.h"
 
+template<>
+ysDevice* ysDevice::CreateApiDevice<DeviceAPI::OpenGL4_0>() {
+    return new ysOpenGLDevice();
+}
+
 ysOpenGLDevice::ysOpenGLDevice() : ysDevice(DeviceAPI::OpenGL4_0) {
     m_deviceCreated = false;
     m_realContext = nullptr;
@@ -183,8 +188,8 @@ ysError ysOpenGLDevice::CreateOnScreenRenderTarget(ysRenderTarget **newTarget, y
     return YDS_ERROR_RETURN(ysError::None);
 }
 
-ysError ysOpenGLDevice::CreateOffScreenRenderTarget(ysRenderTarget **newTarget, int width, int height, 
-    ysRenderTarget::Format format, bool colorData, bool depthBuffer) 
+ysError ysOpenGLDevice::CreateOffScreenRenderTarget(ysRenderTarget **newTarget, int width, int height,
+    ysRenderTarget::Format format, bool colorData, bool depthBuffer)
 {
     YDS_ERROR_DECLARE("CreateOffScreenRenderTarget");
 
@@ -639,7 +644,7 @@ ysError ysOpenGLDevice::EditBufferData(ysGPUBuffer *buffer, char *data) {
 
     ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
     int target = openglBuffer->GetTarget();
-    
+
     m_realContext->glBindBuffer(target, openglBuffer->m_bufferHandle);
     m_realContext->glBufferSubData(target, 0, openglBuffer->GetSize(), data);
 
@@ -927,7 +932,7 @@ unsigned int ysOpenGLDevice::GetPixel(SDL_Surface *surface, int x, int y) {
         break;
     case 4:
         return *(Uint32 *)p;
-        break; 
+        break;
     default:
         return 0; // Avoid warnings
     }
@@ -944,7 +949,7 @@ ysError ysOpenGLDevice::CreateTexture(ysTexture **texture, const char *fname) {
     bool useAlpha = true;
 
     // Use SDL to load the image
-    SDL_Surface *pTexSurface = IMG_Load(fname); 
+    SDL_Surface *pTexSurface = IMG_Load(fname);
 
     if (pTexSurface == nullptr) {
         const char *err = IMG_GetError();
@@ -1193,8 +1198,8 @@ void ysOpenGLDevice::Draw(int numFaces, int indexOffset, int vertexOffset) {
     }
 }
 
-ysError ysOpenGLDevice::CreateOpenGLOffScreenRenderTarget(ysRenderTarget *target, int width, int height, 
-    ysRenderTarget::Format format, bool colorData, bool depthBuffer) 
+ysError ysOpenGLDevice::CreateOpenGLOffScreenRenderTarget(ysRenderTarget *target, int width, int height,
+    ysRenderTarget::Format format, bool colorData, bool depthBuffer)
 {
     YDS_ERROR_DECLARE("CreateOpenGLOffScreenRenderTarget");
 
