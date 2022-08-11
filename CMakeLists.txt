@@ -154,6 +154,9 @@ add_library(delta-core STATIC
     src/yds_tool_geometry_file.cpp
     src/yds_transform.cpp
     src/yds_window.cpp
+    src/yds_window_event_handler.cpp
+    src/yds_window_system.cpp
+    src/yds_window_system_object.cpp
 
     # Include files
     include/yds_allocator.h
@@ -231,6 +234,9 @@ add_library(delta-core STATIC
     include/yds_tool_geometry_file.h
     include/yds_transform.h
     include/yds_window.h
+    include/yds_window_event_handler.h
+    include/yds_window_system.h
+    include/yds_window_system_object.h
 )
 
 target_link_libraries(delta-core PUBLIC
@@ -400,9 +406,7 @@ if (ENABLE_PLAT_WIN32)
         src/yds_windows_monitor.cpp
         src/yds_windows_window.cpp
         src/yds_windows_window_system.cpp
-        src/yds_window_event_handler.cpp
-        src/yds_window_system.cpp
-        src/yds_window_system_object.cpp
+
 
         # Include files
         include/yds_windows_audio_wave_file.h
@@ -411,9 +415,6 @@ if (ENABLE_PLAT_WIN32)
         include/yds_windows_monitor.h
         include/yds_windows_window.h
         include/yds_windows_window_system.h
-        include/yds_window_event_handler.h
-        include/yds_window_system.h
-        include/yds_window_system_object.h
     )
 
     target_link_libraries(delta-core PUBLIC
