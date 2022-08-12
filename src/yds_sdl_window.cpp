@@ -18,7 +18,7 @@ ysError ysSdlWindow::InitializeWindow(ysWindow *parent, std::string title, Windo
 
     Uint32 flags = 0;
 
-    if (m_windowState == SDL_WINDOW_HIDDEN)
+    if (m_windowState == WindowState::Hidden)
         flags |= SDL_WINDOW_HIDDEN;
 
     switch (style) {
