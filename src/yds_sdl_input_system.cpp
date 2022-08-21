@@ -3,7 +3,7 @@
 #include "../include/yds_sdl_input_device.h"
 #include "../include/yds_key_maps.h"
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 ysSdlInputSystem::ysSdlInputSystem() : ysInputSystem(Platform::Sdl) {
     /* void */

@@ -3,7 +3,7 @@
 
 #include "yds_audio_device.h"
 
-#include <SDL2/SDL_audio.h>
+#include <SDL_audio.h>
 
 class ysSdlAudioSystem;
 

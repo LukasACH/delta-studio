@@ -1,6 +1,6 @@
 #include "../include/yds_key_maps.h"
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 ysKey::Code *ysKeyMaps::m_sdlKeyMap;
 
