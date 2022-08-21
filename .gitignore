@@ -351,3 +351,7 @@ workspace/
 
 # Ignore VSCode dir
 .vscode/
+
+cmake-build-*/
+
+.idea
