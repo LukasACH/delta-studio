@@ -2,7 +2,7 @@
 
 #include "../include/yds_sdl_audio_device.h"
 
-#include <SDL2/SDL.h>
+#include <SDL.h>
 
 ysSdlAudioSystem::ysSdlAudioSystem() : ysAudioSystem(API::Sdl) {
     // Make sure that the audio system is up
