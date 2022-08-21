@@ -71,7 +71,7 @@ ysError ysOpenGLDevice::CreateRenderingContext(ysRenderingContext **context, ysW
     ysOpenGLSdlContext *newContext = m_renderingContexts.NewGeneric<ysOpenGLSdlContext>();
 #endif
 
-    YDS_NESTED_ERROR_CALL(newContext->CreateRenderingContext(this, window, 4, 3));
+    YDS_NESTED_ERROR_CALL(newContext->CreateRenderingContext(this, window, 4, 1));
 
     // TEMP
     glFrontFace(GL_CCW);
