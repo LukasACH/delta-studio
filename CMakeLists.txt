@@ -72,6 +72,11 @@ find_package(SDL2_image REQUIRED)
 include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
 
 # =========================================================
+# SSE2NEON
+
+include_directories(dependencies/libraries/sse2neon)
+
+# =========================================================
 # Filesystem (stdlib or Boost)
 
 # Aim for C++17's filesystem first, fallback on boost
