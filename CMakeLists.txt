@@ -372,7 +372,7 @@ if(ENABLE_OPENGL)
     )
 
     if (APPLE)
-        target_include_directories(delta-code PRIVATE
+        target_include_directories(delta-core PRIVATE
             "${OPENGL_INCLUDE_DIR}/Headers"
         )
     endif()
