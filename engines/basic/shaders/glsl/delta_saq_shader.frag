@@ -1,7 +1,7 @@
-#version 420
+#version 410
 
-layout(binding = 0) uniform sampler2D layer0;
-layout(binding = 1) uniform sampler2D layer1;
+uniform sampler2D layer0;
+uniform sampler2D layer1;
 
 out vec4 out_Color;
 

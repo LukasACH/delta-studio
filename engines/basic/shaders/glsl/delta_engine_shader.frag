@@ -1,6 +1,6 @@
-#version 420
+#version 410
 
-layout(binding = 0) uniform sampler2D diffuseTex;
+uniform sampler2D diffuseTex;
 
 out vec4 out_Color;
 
@@ -8,7 +8,7 @@ in vec4 ex_Pos;
 in vec2 ex_Tex;
 in vec3 ex_Normal;
 
-layout (binding = 0) uniform ScreenVariables {
+uniform ScreenVariables {
 	mat4 CameraView;
 	mat4 Projection;
 	vec4 CameraEye;
@@ -18,7 +18,7 @@ layout (binding = 0) uniform ScreenVariables {
 	float FogFar;
 };
 
-layout (binding = 1) uniform ObjectVariables {
+uniform ObjectVariables {
 	mat4 Transform;
 	vec2 TexOffset;
 	vec2 TexScale;
@@ -47,7 +47,7 @@ struct Light {
 	int Active;
 };
 
-layout (binding = 3) uniform Lighting {
+uniform Lighting {
 	Light Lights[32];
 	vec4 AmbientLighting;
 };

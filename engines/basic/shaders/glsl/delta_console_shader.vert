@@ -1,4 +1,4 @@
-#version 420
+#version 410
 
 layout(location=0) in vec2 in_Position;
 layout(location=1) in vec2 in_Tex;
@@ -8,12 +8,12 @@ out vec4 ex_Pos;
 out vec2 ex_Tex;
 out vec4 ex_Col;
 
-layout (binding = 0) uniform ScreenVariables {
+uniform ScreenVariables {
 	mat4 CameraView;
 	mat4 Projection;
 };
 
-layout (binding = 1) uniform ObjectVariables {
+uniform ObjectVariables {
 	vec4 MulCol;
 	vec2 TexOffset;
 	vec2 TexScale;

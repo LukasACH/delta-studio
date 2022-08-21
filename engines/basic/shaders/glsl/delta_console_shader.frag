@@ -1,6 +1,6 @@
-#version 420
+#version 410
 
-layout(binding = 0) uniform sampler2D diffuseTex;
+uniform sampler2D diffuseTex;
 
 in vec4 ex_Pos;
 in vec2 ex_Tex;
@@ -8,7 +8,7 @@ in vec4 ex_Col;
 
 out vec4 out_Color;
 
-layout (binding = 1) uniform ObjectVariables {
+uniform ObjectVariables {
 	vec4 MulCol;
 	vec2 TexOffset;
 	vec2 TexScale;
