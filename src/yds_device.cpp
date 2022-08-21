@@ -43,16 +43,24 @@ ysError ysDevice::CreateDevice(ysDevice **newDevice, DeviceAPI API) {
 
     switch(API) {
     case DeviceAPI::DirectX10:
+#if PLATFORM_WIN32
         *newDevice = CreateApiDevice<DeviceAPI::DirectX10>();
+#endif
         break;
     case DeviceAPI::DirectX11:
+#if PLATFORM_WIN32
         *newDevice = CreateApiDevice<DeviceAPI::DirectX11>();
+#endif
         break;
     case DeviceAPI::OpenGL4_0:
+#if PLATFORM_SDL
         *newDevice = CreateApiDevice<DeviceAPI::OpenGL4_0>();
+#endif
         break;
     case DeviceAPI::Vulkan:
+#if PLATFORM_WIN32
         *newDevice = CreateApiDevice<DeviceAPI::Vulkan>();
+#endif
         break;
     }
 
