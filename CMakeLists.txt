@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.24)
 
 include(CMakeDependentOption)
 
@@ -8,21 +8,43 @@ set_property(GLOBAL PROPERTY PREDEFINED_TARGETS_FOLDER "cmake")
 
 project(delta-studio)
 
+# Platform
+set(PLATFORM SDL CACHE STRING "Build platform")
+set_property(CACHE PLATFORM PROPERTY STRINGS SDL WIN32)
+
+if (PLATFORM STREQUAL WIN32)
+    set(ENABLE_PLAT_WIN32 ON)
+    set(ENABLE_PLAT_SDL OFF)
+elseif(PLATFORM STREQUAL SDL)
+    set(ENABLE_PLAT_WIN32 OFF)
+    set(ENABLE_PLAT_SDL ON)
+else()
+    message(FATAL_ERROR "No valid platform selected.")
+endif()
+
 # Graphics APIs
-option(ENABLE_OPENGL "Enable the OpenGL graphics API" ON)
-cmake_dependent_option(ENABLE_D3D "Enable the Direct3D 10/11 graphics API" ON WIN32 OFF)
-cmake_dependent_option(ENABLE_VULKAN "Enable the Vulkan graphics API" ON WIN32 OFF) # TODO: make Vulkan work outside of Win32
+set(GRAPHICS_API OpenGL CACHE STRING "Build platform")
+set_property(CACHE GRAPHICS_API PROPERTY STRINGS OpenGL Direct3D Vulkan)
+
+if (GRAPHICS_API STREQUAL OpenGL)
+    set(ENABLE_OPENGL ON)
+    set(ENABLE_D3D OFF)
+    set(ENABLE_VULKAN OFF)
+elseif(GRAPHICS_API STREQUAL Direct3D)
+    set(ENABLE_OPENGL OFF)
+    set(ENABLE_D3D ON)
+    set(ENABLE_VULKAN OFF)
+elseif(GRAPHICS_API STREQUAL Vulkan)
+    set(ENABLE_OPENGL OFF)
+    set(ENABLE_D3D OFF)
+    set(ENABLE_VULKAN ON)
+else()
+    message(FATAL_ERROR "No valid graphics API selected.")
+endif()
 
 # Sound Systems
-cmake_dependent_option(ENABLE_DSOUND "Enable the DirectSound API" ON WIN32 OFF)
-
-# Platform
-option(ENABLE_PLAT_SDL "Enable the SDL platform" ON)
-cmake_dependent_option(ENABLE_PLAT_WIN32 "Enable the Win32 Platform" ON WIN32 OFF)
-
-if (ENABLE_PLAT_SDL OR ENABLE_OPENGL)
-    set(ENABLE_SDL ON)
-endif()
+cmake_dependent_option(ENABLE_SDL_AUDIO "Enable the SDL Audio API"   ON ENABLE_PLAT_SDL   OFF)
+cmake_dependent_option(ENABLE_DSOUND    "Enable the DirectSound API" ON ENABLE_PLAT_WIN32 OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
@@ -59,17 +81,14 @@ include_directories(dependencies/libraries/OpenGL/include)
 # =========================================================
 # Vulkan
 
+
+
+#[[
 set(
     VULKAN_LIBS
     ${CMAKE_CURRENT_SOURCE_DIR}/dependencies/libraries/vulkan/lib/${TARGET_ARCHITECTURE})
-include_directories(dependencies/libraries/vulkan/include)
-
-# =========================================================
-# SDL2
-
-find_package(SDL2 REQUIRED)
-find_package(SDL2_image REQUIRED)
-include_directories(${SDL2_INCLUDE_DIRS} ${SDL2_IMAGE_INCLUDE_DIRS})
+include_directories(${Vulkan_INCLUDE_DIR})
+]]
 
 # =========================================================
 # SSE2NEON
@@ -337,8 +356,7 @@ if (ENABLE_DSOUND)
 endif()
 
 if(ENABLE_OPENGL)
-    find_package(OpenGL REQUIRED)
-    message("Found OpenGL include dir: ${OPENGL_INCLUDE_DIR}")
+    find_package(OpenGL REQUIRED OpenGL)
 
     target_sources(delta-core PRIVATE
         # Source files
@@ -350,8 +368,6 @@ if(ENABLE_OPENGL)
         src/yds_opengl_shader.cpp
         src/yds_opengl_shader_program.cpp
         src/yds_opengl_texture.cpp
-        # TODO: make windows impl optional
-        #src/yds_opengl_windows_context.cpp
         src/yds_opengl_sdl_context.cpp
 
         # Include files
@@ -363,7 +379,6 @@ if(ENABLE_OPENGL)
         include/yds_opengl_shader.h
         include/yds_opengl_shader_program.h
         include/yds_opengl_texture.h
-        include/yds_opengl_windows_context.h
         include/yds_opengl_sdl_context.h
     )
 
@@ -371,14 +386,34 @@ if(ENABLE_OPENGL)
         OpenGL::GL
     )
 
-    if (APPLE)
-        target_include_directories(delta-core PRIVATE
-            "${OPENGL_INCLUDE_DIR}/Headers"
-        )
-    endif()
+    if (ENABLE_PLAT_WIN32)
+        target_sources(delta-core PRIVATE
+                # Source files
+                src/yds_opengl_windows_context.cpp
+
+                # Include files
+                include/yds_opengl_sdl_context.h
+                )
+    endif (ENABLE_PLAT_WIN32)
+
+    if (ENABLE_PLAT_SDL)
+        target_sources(delta-core PRIVATE
+                # Source files
+                src/yds_opengl_sdl_context.cpp
+
+                # Include files
+                include/yds_opengl_sdl_context.h
+                )
+    endif (ENABLE_PLAT_SDL)
 endif()
 
 if (ENABLE_VULKAN)
+    if(APPLE)
+        find_package(Vulkan REQUIRED MoltenVK)
+    else()
+        find_package(Vulkan REQUIRED)
+    endif()
+
     target_sources(delta-core PRIVATE
         # Source files
         src/yds_vulkan_context.cpp
@@ -389,7 +424,6 @@ if (ENABLE_VULKAN)
         src/yds_vulkan_shader.cpp
         src/yds_vulkan_shader_program.cpp
         src/yds_vulkan_texture.cpp
-        src/yds_vulkan_windows_context.cpp
 
         # Include files
         include/yds_vulkan.h
@@ -402,13 +436,36 @@ if (ENABLE_VULKAN)
         include/yds_vulkan_shader.h
         include/yds_vulkan_shader_program.h
         include/yds_vulkan_texture.h
-        include/yds_vulkan_windows_context.h
     )
 
-    if (WIN32)
+    if (ENABLE_PLAT_WIN32)
+        target_sources(delta-core PRIVATE
+            # Source files
+            src/yds_vulkan_windows_context.cpp
+
+            # Include files
+            include/yds_vulkan_windows_context.h
+        )
+
         target_link_libraries(delta-core PRIVATE
             ${VULKAN_LIBS}/vulkan-1.lib
         )
+    endif()
+
+    if (ENABLE_PLAT_SDL)
+        target_sources(delta-core PRIVATE
+            # Source files
+            # Include files
+        )
+
+        target_link_libraries(delta-core PRIVATE
+                Vulkan::Vulkan
+                )
+
+        if (APPLE)
+            target_link_libraries(delta-core PRIVATE
+                    Vulkan::MoltenVK)
+        endif (APPLE)
     endif()
 endif()
 
@@ -465,25 +522,22 @@ if (ENABLE_PLAT_SDL)
     )
 endif()
 
-if (ENABLE_SDL)
-    find_package(SDL2 REQUIRED)
-    find_package(SDL2_image REQUIRED)
 
-    target_include_directories(delta-core PRIVATE
-        ${SDL2_INCLUDE_DIRS}
-        ${SDL2_IMAGE_INCLUDE_DIRS}
-    )
+find_package(SDL2 REQUIRED)
+find_package(SDL2_image REQUIRED)
 
-    target_link_libraries(delta-core PRIVATE
-        ${SDL2_LIBRARY}
-        ${SDL2_IMAGE_LIBRARIES}
-    )
-endif()
+target_link_libraries(delta-core PRIVATE
+    SDL2::Main
+    SDL2::Image
+)
 
 target_compile_definitions(delta-core PUBLIC
-    PLATFORM_WIN32=$<BOOL:${ENABLE_PLAT_WIN32}>
-    PLATFORM_SDL=$<BOOL:${ENABLE_PLAT_SDL}>
-    USE_CXX17_FILESYSTEM=$<BOOL:${USE_CXX17_FILESYSTEM}>
+        PLATFORM_WIN32=$<STREQUAL:${PLATFORM},WIN32>
+        PLATFORM_SDL=$<STREQUAL:${PLATFORM},SDL>
+        GRAPHICS_OPENGL=$<STREQUAL:${GRAPHICS_API},OpenGL>
+        GRAPHICS_D3D=$<STREQUAL:${GRAPHICS_API},Direct3D>
+        GRAPHICS_VULKAN=$<STREQUAL:${GRAPHICS_API},Vulkan>
+        USE_CXX17_FILESYSTEM=$<BOOL:${USE_CXX17_FILESYSTEM}>
 )
 
 add_subdirectory(physics)

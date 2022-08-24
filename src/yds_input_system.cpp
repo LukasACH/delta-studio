@@ -29,16 +29,18 @@ ysError ysInputSystem::CreateInputSystem(ysInputSystem **newInputSystem, Platfor
     *newInputSystem = nullptr;
 
     switch (platform) {
-    case Platform::Windows:
+        case Platform::Windows:
 #if PLATFORM_WIN32
-        *newInputSystem = new ysWindowsInputSystem();
+            *newInputSystem = new ysWindowsInputSystem();
 #endif
-        break;
-    case Platform::Sdl:
+            break;
+        case Platform::Sdl:
 #if PLATFORM_SDL
-        *newInputSystem = new ysSdlInputSystem();
+            *newInputSystem = new ysSdlInputSystem();
 #endif
-        break;
+            break;
+        case Platform::Unknown:
+            return YDS_ERROR_RETURN_STATIC(ysError::NotImplemented);
     }
 
     if (*newInputSystem == nullptr) return YDS_ERROR_RETURN_STATIC(ysError::InvalidParameter);

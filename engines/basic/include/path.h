@@ -6,11 +6,9 @@
 #if USE_CXX17_FILESYSTEM
 #include <filesystem>
 #else // USE_CXX17_FILESYSTEM
-namespace boost {
-    namespace filesystem {
-        class path;
-    } /* namespace filesystem */
-} /* namespace boost */
+namespace boost::filesystem {
+    class path;
+}
 #endif // USE_CXX17_FILESYSTEM
 
 namespace dbasic {

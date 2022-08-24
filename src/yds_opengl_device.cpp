@@ -7,8 +7,9 @@
 #include "../include/yds_opengl_shader_program.h"
 #include "../include/yds_opengl_texture.h"
 
+#if PLATFORM_SDL
 #include "../include/yds_opengl_sdl_context.h"
-#ifdef _WIN32
+#elif PLATFORM_WIN32
 #include "../include/yds_opengl_windows_context.h"
 #endif
 
@@ -63,12 +64,12 @@ ysError ysOpenGLDevice::CreateRenderingContext(ysRenderingContext **context, ysW
     if (context == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *context = nullptr;
 
-#ifdef _WIN32
+#if PLATFORM_WIN32
     if (window->GetPlatform() != ysWindowSystemObject::Platform::Windows) return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
     ysOpenGLWindowsContext *newContext = m_renderingContexts.NewGeneric<ysOpenGLWindowsContext>();
-#else
+#elif PLATFORM_SDL
     if (window->GetPlatform() != ysWindowSystemObject::Platform::Sdl) return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
-    ysOpenGLSdlContext *newContext = m_renderingContexts.NewGeneric<ysOpenGLSdlContext>();
+    auto *newContext = m_renderingContexts.NewGeneric<ysOpenGLSdlContext>();
 #endif
 
     YDS_NESTED_ERROR_CALL(newContext->CreateRenderingContext(this, window, 4, 1));
@@ -88,7 +89,7 @@ ysError ysOpenGLDevice::UpdateRenderingContext(ysRenderingContext *context) {
     YDS_ERROR_DECLARE("UpdateRenderingContext");
 
     ysRenderTarget *target = context->GetAttachedRenderTarget();
-    ysOpenGLVirtualContext *openglContext = static_cast<ysOpenGLVirtualContext *>(context);
+    auto *openglContext = dynamic_cast<ysOpenGLVirtualContext *>(context);
 
     const int width = context->GetWindow()->GetGameWidth();
     const int height = context->GetWindow()->GetGameHeight();
@@ -111,7 +112,7 @@ ysError ysOpenGLDevice::DestroyRenderingContext(ysRenderingContext *&context) {
         SetRenderingContext(nullptr);
     }
 
-    ysOpenGLVirtualContext *openglContext = static_cast<ysOpenGLVirtualContext *>(context);
+    auto *openglContext = dynamic_cast<ysOpenGLVirtualContext *>(context);
 
     if (openglContext->IsRealContext()) {
         ysOpenGLVirtualContext *transferContext = GetTransferContext();
@@ -137,7 +138,7 @@ ysError ysOpenGLDevice::SetContextMode(ysRenderingContext *context, ysRenderingC
     if (context == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     if (!CheckCompatibility(context)) return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
 
-    ysOpenGLVirtualContext *openglContext = static_cast<ysOpenGLVirtualContext *>(context);
+    auto *openglContext = dynamic_cast<ysOpenGLVirtualContext *>(context);
     openglContext->SetContextMode(mode);
 
     return YDS_ERROR_RETURN(ysError::None);
@@ -146,7 +147,7 @@ ysError ysOpenGLDevice::SetContextMode(ysRenderingContext *context, ysRenderingC
 void ysOpenGLDevice::SetRenderingContext(ysRenderingContext *context) {
     if (context != nullptr) {
         if (context != m_activeContext) {
-            ysOpenGLVirtualContext *openGLContext = static_cast<ysOpenGLVirtualContext *>(context);
+            auto *openGLContext = dynamic_cast<ysOpenGLVirtualContext *>(context);
             openGLContext->SetContext(m_realContext);
         }
     }
@@ -173,8 +174,8 @@ ysError ysOpenGLDevice::CreateOnScreenRenderTarget(ysRenderTarget **newTarget, y
     if (context == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     if (context->GetAttachedRenderTarget() != nullptr) return YDS_ERROR_RETURN(ysError::ContextAlreadyHasRenderTarget);
 
-    ysOpenGLRenderTarget *newRenderTarget = m_renderTargets.NewGeneric<ysOpenGLRenderTarget>();
-    ysOpenGLVirtualContext *openglContext = static_cast<ysOpenGLVirtualContext *>(context);
+    auto *newRenderTarget = m_renderTargets.NewGeneric<ysOpenGLRenderTarget>();
+    auto *openglContext = dynamic_cast<ysOpenGLVirtualContext *>(context);
 
     openglContext->m_attachedRenderTarget = newRenderTarget;
 
@@ -201,7 +202,7 @@ ysError ysOpenGLDevice::CreateOffScreenRenderTarget(ysRenderTarget **newTarget, 
 
     if (newTarget == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLRenderTarget *newRenderTarget = m_renderTargets.NewGeneric<ysOpenGLRenderTarget>();
+    auto *newRenderTarget = m_renderTargets.NewGeneric<ysOpenGLRenderTarget>();
 
     ysError result = CreateOpenGLOffScreenRenderTarget(newRenderTarget, width, height, format, colorData, depthBuffer);
     if (result != ysError::None) {
@@ -220,7 +221,7 @@ ysError ysOpenGLDevice::CreateSubRenderTarget(ysRenderTarget **newTarget, ysRend
     if (newTarget == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     if (parent->GetType() == ysRenderTarget::Type::Subdivision) return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLRenderTarget *newRenderTarget = m_renderTargets.NewGeneric<ysOpenGLRenderTarget>();
+    auto *newRenderTarget = m_renderTargets.NewGeneric<ysOpenGLRenderTarget>();
 
     newRenderTarget->m_type = ysRenderTarget::Type::Subdivision;
     newRenderTarget->m_posX = x;
@@ -282,9 +283,9 @@ ysError ysOpenGLDevice::SetRenderTarget(ysRenderTarget *target, int slot) {
     YDS_ERROR_DECLARE("SetRenderTarget");
 
     if (target != nullptr) {
-        ysOpenGLRenderTarget *openglTarget = static_cast<ysOpenGLRenderTarget *>(target);
+        auto *openglTarget = dynamic_cast<ysOpenGLRenderTarget *>(target);
         ysOpenGLRenderTarget *realTarget = (target->GetType() == ysRenderTarget::Type::Subdivision) ?
-            static_cast<ysOpenGLRenderTarget *>(target->GetParent()) : openglTarget;
+            dynamic_cast<ysOpenGLRenderTarget *>(target->GetParent()) : openglTarget;
 
         for (int i = 0; i < MaxRenderTargets; ++i) {
             if (realTarget != m_activeRenderTarget[i]) {
@@ -381,7 +382,7 @@ ysError ysOpenGLDevice::DestroyRenderTarget(ysRenderTarget *&target) {
         }
     }
 
-    ysOpenGLRenderTarget *openglTarget = static_cast<ysOpenGLRenderTarget *>(target);
+    auto *openglTarget = dynamic_cast<ysOpenGLRenderTarget *>(target);
     DestroyOpenGLRenderTarget(openglTarget);
 
     YDS_NESTED_ERROR_CALL(ysDevice::DestroyRenderTarget(target));
@@ -411,7 +412,7 @@ ysError ysOpenGLDevice::Present() {
     if (m_activeContext == nullptr) return YDS_ERROR_RETURN(ysError::NoContext);
     if (m_activeRenderTarget[0]->GetType() == ysRenderTarget::Type::Subdivision) return YDS_ERROR_RETURN(ysError::InvalidOperation);
 
-    ysOpenGLVirtualContext *currentContext = static_cast<ysOpenGLVirtualContext *>(m_activeContext);
+    auto *currentContext = dynamic_cast<ysOpenGLVirtualContext *>(m_activeContext);
     currentContext->Present();
 
     return YDS_ERROR_RETURN(ysError::None);
@@ -453,7 +454,7 @@ ysError ysOpenGLDevice::CreateVertexBuffer(ysGPUBuffer **newBuffer, int size, ch
     if (newBuffer == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *newBuffer = nullptr;
 
-    ysOpenGLGPUBuffer *newOpenGLBuffer = m_gpuBuffers.NewGeneric<ysOpenGLGPUBuffer>();
+    auto *newOpenGLBuffer = m_gpuBuffers.NewGeneric<ysOpenGLGPUBuffer>();
 
     m_realContext->glGenVertexArrays(1, &newOpenGLBuffer->m_vertexArrayHandle);
     m_realContext->glBindVertexArray(newOpenGLBuffer->m_vertexArrayHandle);
@@ -482,7 +483,7 @@ ysError ysOpenGLDevice::CreateIndexBuffer(ysGPUBuffer **newBuffer, int size, cha
     if (newBuffer == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *newBuffer = nullptr;
 
-    ysOpenGLGPUBuffer *newOpenGLBuffer = m_gpuBuffers.NewGeneric<ysOpenGLGPUBuffer>();
+    auto *newOpenGLBuffer = m_gpuBuffers.NewGeneric<ysOpenGLGPUBuffer>();
 
     newOpenGLBuffer->m_size = size;
     newOpenGLBuffer->m_mirrorToRAM = mirrorToRam;
@@ -509,7 +510,7 @@ ysError ysOpenGLDevice::CreateConstantBuffer(ysGPUBuffer **newBuffer, int size, 
     if (newBuffer == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *newBuffer = nullptr;
 
-    ysOpenGLGPUBuffer *newOpenGLBuffer = m_gpuBuffers.NewGeneric<ysOpenGLGPUBuffer>();
+    auto *newOpenGLBuffer = m_gpuBuffers.NewGeneric<ysOpenGLGPUBuffer>();
 
     newOpenGLBuffer->m_size = size;
     newOpenGLBuffer->m_mirrorToRAM = mirrorToRam;
@@ -533,9 +534,9 @@ ysError ysOpenGLDevice::DestroyGPUBuffer(ysGPUBuffer *&buffer) {
     YDS_ERROR_DECLARE("DestroyGPUBuffer");
 
     if (!CheckCompatibility(buffer))    return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
-    if (buffer == NULL)                    return YDS_ERROR_RETURN(ysError::InvalidParameter);
+    if (buffer == nullptr)                    return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
+    auto *openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(buffer);
     m_realContext->glDeleteBuffers(1, &openglBuffer->m_bufferHandle);
 
     if (openglBuffer->m_bufferType == ysGPUBuffer::GPU_DATA_BUFFER) {
@@ -558,8 +559,8 @@ ysError ysOpenGLDevice::UseVertexBuffer(ysGPUBuffer *buffer, int stride, int off
         m_realContext->glBindBuffer(GL_ARRAY_BUFFER, 0);
     }
     else {
-        ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
-        ysOpenGLGPUBuffer *openglCurrentIndexBuffer = static_cast<ysOpenGLGPUBuffer *>(m_activeIndexBuffer);
+        auto openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(buffer);
+        auto *openglCurrentIndexBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(m_activeIndexBuffer);
 
         if (openglBuffer->m_bufferType == ysGPUBuffer::GPU_DATA_BUFFER && m_activeVertexBuffer != buffer) {
             m_realContext->glBindVertexArray(openglBuffer->m_vertexArrayHandle);
@@ -586,8 +587,8 @@ ysError ysOpenGLDevice::UseIndexBuffer(ysGPUBuffer *buffer, int offset) {
         m_realContext->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
     }
     else {
-        ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
-        ysOpenGLGPUBuffer *openglCurrentIndexBuffer = static_cast<ysOpenGLGPUBuffer *>(m_activeIndexBuffer);
+        auto *openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(buffer);
+        auto *openglCurrentIndexBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(m_activeIndexBuffer);
 
         if (openglBuffer->m_bufferType == ysGPUBuffer::GPU_INDEX_BUFFER && m_activeIndexBuffer != buffer) {
             m_realContext->glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, openglBuffer->m_bufferHandle);
@@ -606,7 +607,7 @@ ysError ysOpenGLDevice::UseConstantBuffer(ysGPUBuffer *buffer, int slot) {
         m_realContext->glBindBuffer(GL_UNIFORM_BUFFER, 0);
     }
     else {
-        ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
+        auto *openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(buffer);
         m_realContext->glBindBufferRange(GL_UNIFORM_BUFFER, slot, openglBuffer->m_bufferHandle, 0, buffer->GetSize());
     }
 
@@ -623,7 +624,7 @@ ysError ysOpenGLDevice::EditBufferDataRange(ysGPUBuffer *buffer, char *data, int
 
     ysGPUBuffer *previous = GetActiveBuffer(buffer->GetType());
 
-    ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
+    auto *openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(buffer);
     int target = openglBuffer->GetTarget();
 
     m_realContext->glBindBuffer(target, openglBuffer->m_bufferHandle);
@@ -631,7 +632,7 @@ ysError ysOpenGLDevice::EditBufferDataRange(ysGPUBuffer *buffer, char *data, int
 
     // Restore Previous State
     if (previous != buffer) {
-        openglBuffer = static_cast<ysOpenGLGPUBuffer *>(previous);
+        openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(previous);
         m_realContext->glBindBuffer(target, (openglBuffer) ? openglBuffer->m_bufferHandle : 0);
     }
 
@@ -643,12 +644,12 @@ ysError ysOpenGLDevice::EditBufferDataRange(ysGPUBuffer *buffer, char *data, int
 ysError ysOpenGLDevice::EditBufferData(ysGPUBuffer *buffer, char *data) {
     YDS_ERROR_DECLARE("EditBufferData");
 
-    if (!CheckCompatibility(buffer))            return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
+    if (!CheckCompatibility(buffer))             return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
     if (buffer == nullptr || data == nullptr)    return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
     ysGPUBuffer *previous = GetActiveBuffer(buffer->GetType());
 
-    ysOpenGLGPUBuffer *openglBuffer = static_cast<ysOpenGLGPUBuffer *>(buffer);
+    auto *openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(buffer);
     int target = openglBuffer->GetTarget();
 
     m_realContext->glBindBuffer(target, openglBuffer->m_bufferHandle);
@@ -656,7 +657,7 @@ ysError ysOpenGLDevice::EditBufferData(ysGPUBuffer *buffer, char *data) {
 
     // Restore Previous State
     if (previous != buffer) {
-        openglBuffer = static_cast<ysOpenGLGPUBuffer *>(previous);
+        openglBuffer = dynamic_cast<ysOpenGLGPUBuffer *>(previous);
         m_realContext->glBindBuffer(target, (openglBuffer) ? openglBuffer->m_bufferHandle : 0);
     }
 
@@ -690,7 +691,7 @@ ysError ysOpenGLDevice::CreateVertexShader(ysShader **newShader, const char *sha
     handle = m_realContext->glCreateShader(GL_VERTEX_SHADER);
     if (handle == 0) return YDS_ERROR_RETURN(ysError::CouldNotCreateShader);
 
-    m_realContext->glShaderSource(handle, 1, &fileBuffer, NULL); result = glGetError();
+    m_realContext->glShaderSource(handle, 1, &fileBuffer, nullptr); result = glGetError();
     m_realContext->glCompileShader(handle);
 
     delete[] fileBuffer;
@@ -701,7 +702,7 @@ ysError ysOpenGLDevice::CreateVertexShader(ysShader **newShader, const char *sha
 
     if (!shaderCompiled) {
         char errorBuffer[2048 + 1];
-        m_realContext->glGetShaderInfoLog(handle, 2048, NULL, errorBuffer);
+        m_realContext->glGetShaderInfoLog(handle, 2048, nullptr, errorBuffer);
 
         return YDS_ERROR_RETURN_MSG(ysError::VertexShaderCompilationError, errorBuffer);
     }
@@ -743,7 +744,7 @@ ysError ysOpenGLDevice::CreatePixelShader(ysShader **newShader, const char *shad
     file.ReadFileToBuffer(fileBuffer);
     fileBuffer[fileLength] = 0;
 
-    m_realContext->glShaderSource(shaderHandle, 1, &fileBuffer, NULL);
+    m_realContext->glShaderSource(shaderHandle, 1, &fileBuffer, nullptr);
     m_realContext->glCompileShader(shaderHandle);
 
     delete[] fileBuffer;
@@ -755,11 +756,11 @@ ysError ysOpenGLDevice::CreatePixelShader(ysShader **newShader, const char *shad
 
     if (!shaderCompiled) {
         char errorBuffer[2048 + 1];
-        m_realContext->glGetShaderInfoLog(shaderHandle, 2048, NULL, errorBuffer);
+        m_realContext->glGetShaderInfoLog(shaderHandle, 2048, nullptr, errorBuffer);
         return YDS_ERROR_RETURN_MSG(ysError::FragmentShaderCompilationError, errorBuffer);
     }
 
-    ysOpenGLShader *newOpenGLShader = m_shaders.NewGeneric<ysOpenGLShader>();
+    auto *newOpenGLShader = m_shaders.NewGeneric<ysOpenGLShader>();
     strcpy_s(newOpenGLShader->m_shaderName, 64, shaderName);
     strcpy_s(newOpenGLShader->m_filename, 256, shaderFilename);
     newOpenGLShader->m_shaderType = ysShader::ShaderType::Pixel;
@@ -775,7 +776,7 @@ ysError ysOpenGLDevice::DestroyShader(ysShader *&shader) {
 
     if (shader == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLShader *openglShader = static_cast<ysOpenGLShader *>(shader);
+    auto *openglShader = dynamic_cast<ysOpenGLShader *>(shader);
     m_realContext->glDeleteShader(openglShader->m_handle);
 
     YDS_NESTED_ERROR_CALL(ysDevice::DestroyShader(shader));
@@ -788,10 +789,10 @@ ysError ysOpenGLDevice::DestroyShaderProgram(ysShaderProgram *&program, bool des
 
     if (program == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLShaderProgram *openglProgram = static_cast<ysOpenGLShaderProgram *>(program);
+    auto *openglProgram = dynamic_cast<ysOpenGLShaderProgram *>(program);
 
     for (int i = 0; i < (int)ysShader::ShaderType::NumShaderTypes; i++) {
-        ysOpenGLShader *openglShader = static_cast<ysOpenGLShader *>(openglProgram->m_shaderSlots[i]);
+        auto *openglShader = dynamic_cast<ysOpenGLShader *>(openglProgram->m_shaderSlots[i]);
         m_realContext->glDetachShader(openglProgram->m_handle, openglShader->m_handle);
     }
 
@@ -847,7 +848,7 @@ ysError ysOpenGLDevice::UseShaderProgram(ysShaderProgram *program) {
         m_realContext->glUseProgram(openglProgram->m_handle);
     }
     else {
-        m_realContext->glUseProgram(NULL);
+        m_realContext->glUseProgram(0);
     }
 
     return YDS_ERROR_RETURN(ysError::None);
@@ -856,7 +857,7 @@ ysError ysOpenGLDevice::UseShaderProgram(ysShaderProgram *program) {
 ysError ysOpenGLDevice::SetConstantBufferSlot(ysShaderProgram *program, const char *name, int slot) {
     YDS_ERROR_DECLARE("SetConstantBufferSlot");
 
-    ysOpenGLShaderProgram *openglProgram = static_cast<ysOpenGLShaderProgram *>(program);
+    auto *openglProgram = dynamic_cast<ysOpenGLShaderProgram *>(program);
     auto index = m_realContext->glGetUniformBlockIndex(openglProgram->m_handle, name);
 
     if (index == GL_INVALID_INDEX) return YDS_ERROR_RETURN(ysError::InvalidParameter);
@@ -869,7 +870,7 @@ ysError ysOpenGLDevice::SetConstantBufferSlot(ysShaderProgram *program, const ch
 ysError ysOpenGLDevice::SetTextureSlot(ysShaderProgram *program, const char *name, int slot) {
     YDS_ERROR_DECLARE("SetTextureSlot");
 
-    ysOpenGLShaderProgram *openglProgram = static_cast<ysOpenGLShaderProgram *>(program);
+    auto *openglProgram = dynamic_cast<ysOpenGLShaderProgram *>(program);
     auto location = m_realContext->glGetUniformLocation(openglProgram->m_handle, name);
 
     if (location < 0) return YDS_ERROR_RETURN(ysError::InvalidParameter);
@@ -885,7 +886,7 @@ ysError ysOpenGLDevice::CreateShaderProgram(ysShaderProgram **program) {
 
     if (program == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLShaderProgram *newProgram = m_shaderPrograms.NewGeneric<ysOpenGLShaderProgram>();
+    auto *newProgram = m_shaderPrograms.NewGeneric<ysOpenGLShaderProgram>();
     newProgram->m_handle = m_realContext->glCreateProgram();
 
     *program = static_cast<ysShaderProgram *>(newProgram);
@@ -897,7 +898,7 @@ ysError ysOpenGLDevice::CreateShaderProgram(ysShaderProgram **program) {
 ysError ysOpenGLDevice::CreateInputLayout(ysInputLayout **newInputLayout, ysShader *shader, const ysRenderGeometryFormat *format) {
     YDS_ERROR_DECLARE("CreateInputLayout");
 
-    ysOpenGLInputLayout *newLayout = m_inputLayouts.NewGeneric<ysOpenGLInputLayout>();
+    auto *newLayout = m_inputLayouts.NewGeneric<ysOpenGLInputLayout>();
     newLayout->m_size = 0;
     int nChannels = format->GetChannelCount();
 
@@ -928,12 +929,13 @@ ysError ysOpenGLDevice::UseInputLayout(ysInputLayout *layout) {
 
     if (m_activeVertexBuffer == nullptr) return YDS_ERROR_RETURN(ysError::None);
 
-    ysOpenGLInputLayout *openglLayout = static_cast<ysOpenGLInputLayout *>(layout);
+    auto *openglLayout = dynamic_cast<ysOpenGLInputLayout *>(layout);
     const int nChannels = openglLayout->m_channels.GetNumObjects();
 
     for (int i = 0; i < nChannels; i++) {
         ysOpenGLLayoutChannel *channel = openglLayout->m_channels.Get(i);
-        m_realContext->glVertexAttribPointer(i, channel->m_length, channel->m_type, GL_FALSE, openglLayout->m_size, (void *)channel->m_offset);
+        m_realContext->glVertexAttribPointer(i, channel->m_length, channel->m_type, GL_FALSE, openglLayout->m_size,
+                                             reinterpret_cast<const void *>(channel->m_offset));
         m_realContext->glEnableVertexAttribArray(i);
     }
 
@@ -991,7 +993,7 @@ ysError ysOpenGLDevice::CreateTexture(ysTexture **texture, const char *fname) {
         return YDS_ERROR_RETURN_MSG(ysError::CouldNotOpenFile, fname);
     }
 
-    ysOpenGLTexture *newTexture = m_textures.NewGeneric<ysOpenGLTexture>();
+    auto newTexture = m_textures.NewGeneric<ysOpenGLTexture>();
     strcpy_s(newTexture->m_filename, 257, fname);
 
     glGenTextures(1, &newTexture->m_handle);
@@ -1006,7 +1008,7 @@ ysError ysOpenGLDevice::CreateTexture(ysTexture **texture, const char *fname) {
     int nBytes = newTexture->m_width * newTexture->m_height * (useAlpha ? 4 : 3);
     int size = 0;
 
-    Uint8 *imageData = new Uint8[nBytes];
+    auto *imageData = new Uint8[nBytes];
 
     int pos = 0;
     int y;
@@ -1059,7 +1061,7 @@ ysError ysOpenGLDevice::CreateTexture(ysTexture **texture, int width, int height
     if (texture == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *texture = nullptr;
 
-    ysOpenGLTexture *newTexture = m_textures.NewGeneric<ysOpenGLTexture>();
+    auto *newTexture = m_textures.NewGeneric<ysOpenGLTexture>();
     strcpy_s(newTexture->m_filename, 257, "");
 
     glGenTextures(1, &newTexture->m_handle);
@@ -1089,7 +1091,7 @@ ysError ysOpenGLDevice::CreateAlphaTexture(ysTexture **texture, int width, int h
     if (texture == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *texture = nullptr;
 
-    ysOpenGLTexture *newTexture = m_textures.NewGeneric<ysOpenGLTexture>();
+    auto *newTexture = m_textures.NewGeneric<ysOpenGLTexture>();
     strcpy_s(newTexture->m_filename, 257, "");
 
     glGenTextures(1, &newTexture->m_handle);
@@ -1113,14 +1115,14 @@ ysError ysOpenGLDevice::UseTexture(ysTexture *texture, int slot) {
     YDS_NESTED_ERROR_CALL(ysDevice::UseTexture(texture, slot));
 
     if (texture != nullptr) {
-        ysOpenGLTexture *openglTexture = static_cast<ysOpenGLTexture *>(texture);
+        auto *openglTexture = dynamic_cast<ysOpenGLTexture *>(texture);
 
         m_realContext->glActiveTexture(slot + GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, openglTexture->m_handle);
     }
     else {
         m_realContext->glActiveTexture(slot + GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D, NULL);
+        glBindTexture(GL_TEXTURE_2D, 0);
 
     }
 
@@ -1132,7 +1134,7 @@ ysError ysOpenGLDevice::UseRenderTargetAsTexture(ysRenderTarget *renderTarget, i
     YDS_NESTED_ERROR_CALL(ysDevice::UseRenderTargetAsTexture(renderTarget, slot));
 
     if (renderTarget != nullptr) {
-        ysOpenGLRenderTarget *openglRenderTarget = static_cast<ysOpenGLRenderTarget *>(renderTarget);
+        auto *openglRenderTarget = dynamic_cast<ysOpenGLRenderTarget *>(renderTarget);
 
         m_realContext->glActiveTexture(slot + GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D, openglRenderTarget->GetTexture());
@@ -1150,7 +1152,7 @@ ysError ysOpenGLDevice::DestroyTexture(ysTexture *&texture) {
 
     if (texture == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
 
-    ysOpenGLTexture *openglTexture = static_cast<ysOpenGLTexture *>(texture);
+    auto *openglTexture = dynamic_cast<ysOpenGLTexture *>(texture);
 
     for (int i = 0; i < m_maxTextureSlots; i++) {
         if (m_activeTextures[i].Texture == texture) {
@@ -1168,14 +1170,15 @@ ysError ysOpenGLDevice::DestroyTexture(ysTexture *&texture) {
 void ysOpenGLDevice::ResubmitInputLayout() {
     if (m_activeInputLayout == nullptr) return;
 
-    ysOpenGLInputLayout *openglLayout = static_cast<ysOpenGLInputLayout *>(m_activeInputLayout);
+    auto *openglLayout = dynamic_cast<ysOpenGLInputLayout *>(m_activeInputLayout);
     int nChannels = openglLayout->m_channels.GetNumObjects();
 
     for (int i = 0; i < nChannels; i++) {
         ysOpenGLLayoutChannel *channel = openglLayout->m_channels.Get(i);
 
         if (channel->m_type == GL_FLOAT) {
-            m_realContext->glVertexAttribPointer(i, channel->m_length, channel->m_type, GL_FALSE, openglLayout->m_size, (void *)channel->m_offset);
+            m_realContext->glVertexAttribPointer(i, channel->m_length, channel->m_type, GL_FALSE, openglLayout->m_size,
+                                                 reinterpret_cast<const void *>(channel->m_offset));
         }
         else {
 #ifdef __APPLE__
@@ -1192,7 +1195,7 @@ void ysOpenGLDevice::ResubmitInputLayout() {
 
 const ysOpenGLVirtualContext *ysOpenGLDevice::UpdateContext() {
     for (int i = 0; i < m_renderingContexts.GetNumObjects(); i++) {
-        ysOpenGLVirtualContext *openglContext = static_cast<ysOpenGLVirtualContext *>(m_renderingContexts.Get(i));
+        auto *openglContext = dynamic_cast<ysOpenGLVirtualContext *>(m_renderingContexts.Get(i));
         if (openglContext->IsRealContext()) {
             return m_realContext = openglContext;
         }
@@ -1204,7 +1207,7 @@ const ysOpenGLVirtualContext *ysOpenGLDevice::UpdateContext() {
 
 ysOpenGLVirtualContext *ysOpenGLDevice::GetTransferContext() {
     for (int i = 0; i < m_renderingContexts.GetNumObjects(); i++) {
-        ysOpenGLVirtualContext *openglContext = static_cast<ysOpenGLVirtualContext *>(m_renderingContexts.Get(i));
+        auto *openglContext = dynamic_cast<ysOpenGLVirtualContext *>(m_renderingContexts.Get(i));
         if (!openglContext->IsRealContext()) return openglContext;
     }
 
@@ -1218,11 +1221,8 @@ int ysOpenGLDevice::GetFormatGLType(ysRenderGeometryChannel::ChannelFormat forma
     case ysRenderGeometryChannel::ChannelFormat::R32G32B32A32_FLOAT:
         return GL_FLOAT;
     case ysRenderGeometryChannel::ChannelFormat::R32G32B32A32_UINT:
-        return GL_UNSIGNED_INT;
     case ysRenderGeometryChannel::ChannelFormat::R32G32B32_UINT:
-        return GL_UNSIGNED_INT;
-    default:
-        // No real option here
+    default: // No real option here
         return GL_UNSIGNED_INT;
     }
 }
@@ -1234,14 +1234,15 @@ int ysOpenGLDevice::GetFramebufferName(int slot) {
 // TEMP
 void ysOpenGLDevice::Draw(int numFaces, int indexOffset, int vertexOffset) {
     if (m_activeVertexBuffer != nullptr) {
-        m_realContext->glDrawElementsBaseVertex(GL_TRIANGLES, numFaces * 3, GL_UNSIGNED_SHORT, (void *)(indexOffset * 2), vertexOffset);
+        m_realContext->glDrawElementsBaseVertex(GL_TRIANGLES, numFaces * 3, GL_UNSIGNED_SHORT,
+                                                reinterpret_cast<const void *>(indexOffset * 2), vertexOffset);
     }
 }
 
 ysError ysOpenGLDevice::CreateOpenGLOffScreenRenderTarget(ysRenderTarget *target, int width, int height,
     ysRenderTarget::Format format, bool colorData, bool depthBuffer)
 {
-    YDS_ERROR_DECLARE("CreateOpenGLOffScreenRenderTarget");
+    YDS_ERROR_DECLARE("CreateOp enGLOffScreenRenderTarget");
 
     // Generate the empty texture
     unsigned int newTexture;
@@ -1307,7 +1308,7 @@ ysError ysOpenGLDevice::CreateOpenGLOffScreenRenderTarget(ysRenderTarget *target
         if (!colorData) m_realContext->glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, newTexture, 0);
     }
 
-    ysOpenGLRenderTarget *newRenderTarget = static_cast<ysOpenGLRenderTarget *>(target);
+    auto *newRenderTarget = dynamic_cast<ysOpenGLRenderTarget *>(target);
 
     newRenderTarget->m_type = ysRenderTarget::Type::OffScreen;
     newRenderTarget->m_posX = 0;
@@ -1331,7 +1332,7 @@ ysError ysOpenGLDevice::CreateOpenGLOffScreenRenderTarget(ysRenderTarget *target
 ysError ysOpenGLDevice::DestroyOpenGLRenderTarget(ysRenderTarget *target) {
     YDS_ERROR_DECLARE("DestroyOpenGLRenderTarget");
 
-    ysOpenGLRenderTarget *openglTarget = static_cast<ysOpenGLRenderTarget *>(target);
+    auto *openglTarget = dynamic_cast<ysOpenGLRenderTarget *>(target);
 
     if (target->GetType() == ysRenderTarget::Type::OffScreen) {
         if (target->HasDepthBuffer()) {

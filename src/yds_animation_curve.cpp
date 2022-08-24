@@ -78,7 +78,7 @@ void ysAnimationCurve::AddSamplePoint( const ysAnimationCurve::CurveHandle &hand
 }
 
 void ysAnimationCurve::AddLinearSamplePoint(float s, float t) {
-    CurveHandle handle;
+    CurveHandle handle{};
     handle.mode = CurveHandle::InterpolationMode::Linear;
     handle.l_handle_x = handle.l_handle_y = 0.0f;
     handle.r_handle_x = handle.r_handle_y = 0.0f;
@@ -116,6 +116,8 @@ void ysAnimationCurve::Attach(ysAnimationTarget *target) {
         break;
     case CurveType::RotationQuat:
         /* Not implemented */
+        break;
+    case CurveType::Undefined:
         break;
     }
 }

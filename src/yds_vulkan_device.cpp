@@ -6,16 +6,21 @@
 #include "../include/yds_vulkan_texture.h"
 #include "../include/yds_vulkan.h"
 
+#include "../engines/basic/include/safe_string.h"
+
 #include <vector>
 
-ysVulkanDevice::ysVulkanDevice() {
+template<>
+ysDevice* ysDevice::CreateApiDevice<ysContextObject::DeviceAPI::Vulkan>() {
+    return new ysVulkanDevice();
+}
+
+ysVulkanDevice::ysVulkanDevice() : ysDevice(ysContextObject::DeviceAPI::Vulkan) {
     m_device = nullptr;
     m_instance = nullptr;
 }
 
-ysVulkanDevice::~ysVulkanDevice() {
-    /* void */
-}
+ysVulkanDevice::~ysVulkanDevice() = default;
 
 ysError ysVulkanDevice::InitializeDevice() {
     YDS_ERROR_DECLARE("InitializeDevice");
@@ -72,7 +77,7 @@ ysError ysVulkanDevice::UpdateRenderingContext(ysRenderingContext *context) {
 ysError ysVulkanDevice::DestroyRenderingContext(ysRenderingContext *&context) {
     YDS_ERROR_DECLARE("DestroyRenderingContext");
 
-    ysVulkanContext *vulkanContext = static_cast<ysVulkanContext *>(context);
+    auto *vulkanContext = dynamic_cast<ysVulkanContext *>(context);
     YDS_NESTED_ERROR_CALL(vulkanContext->Destroy());
 
     return YDS_ERROR_RETURN(ysError::None);
@@ -91,8 +96,8 @@ ysError ysVulkanDevice::CreateOnScreenRenderTarget(ysRenderTarget **newTarget, y
     if (context == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     if (context->GetAttachedRenderTarget() != nullptr) return YDS_ERROR_RETURN(ysError::ContextAlreadyHasRenderTarget);
 
-    ysVulkanRenderTarget *newRenderTarget = m_renderTargets.NewGeneric<ysVulkanRenderTarget>();
-    ysVulkanContext *vulkanContext = static_cast<ysVulkanContext *>(context);
+    auto *newRenderTarget = m_renderTargets.NewGeneric<ysVulkanRenderTarget>();
+    auto *vulkanContext = dynamic_cast<ysVulkanContext *>(context);
 
     newRenderTarget->m_type = ysRenderTarget::Type::OnScreen;
     newRenderTarget->m_posX = 0;
@@ -252,7 +257,7 @@ ysError ysVulkanDevice::CreateAlphaTexture(ysTexture **texture, int width, int h
     if (texture == nullptr) return YDS_ERROR_RETURN(ysError::InvalidParameter);
     *texture = nullptr;
 
-    ysVulkanTexture *newTexture = m_textures.NewGeneric<ysVulkanTexture>();
+    auto *newTexture = m_textures.NewGeneric<ysVulkanTexture>();
     strcpy_s(newTexture->m_filename, 257, "");
     newTexture->m_width = width;
     newTexture->m_height = height;
@@ -281,7 +286,9 @@ ysError ysVulkanDevice::CreateVulkanInstance() {
     YDS_ERROR_DECLARE("CreateVulkanInstance");
 
     const char *extensions[] = {
+#ifdef ENABLE_WIN32
     VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
+#endif
     VK_KHR_SURFACE_EXTENSION_NAME
     };
 

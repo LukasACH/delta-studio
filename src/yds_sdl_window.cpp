@@ -4,9 +4,7 @@ ysSdlWindow::ysSdlWindow() : ysWindow(Platform::Sdl) {
     /* void */
 }
 
-ysSdlWindow::~ysSdlWindow() {
-    /* void */
-}
+ysSdlWindow::~ysSdlWindow() = default;
 
 ysError ysSdlWindow::InitializeWindow(ysWindow *parent, std::string title, WindowStyle style, int x, int y, int width, int height, ysMonitor *monitor) {
     YDS_ERROR_DECLARE("InitializeWindow");
@@ -14,7 +12,7 @@ ysError ysSdlWindow::InitializeWindow(ysWindow *parent, std::string title, Windo
     if (!CheckCompatibility(parent)) return YDS_ERROR_RETURN(ysError::IncompatiblePlatforms);
 
     YDS_NESTED_ERROR_CALL(ysWindow::InitializeWindow(parent, title, style, x, y, width, height, monitor));
-    auto *parentWindow = static_cast<ysSdlWindow *>(parent);
+    auto *parentWindow = dynamic_cast<ysSdlWindow *>(parent);
 
     Uint32 flags = 0;
 
@@ -36,8 +34,11 @@ ysError ysSdlWindow::InitializeWindow(ysWindow *parent, std::string title, Windo
         break;
     }
 
-    // TODO: choose between VULKAN and OPENGL here
+#if GRAPHICS_VULKAN
+    m_window = SDL_CreateWindow(title.c_str(), x, y, width, height, SDL_WINDOW_VULKAN);
+#elif GRAPHICS_OPENGL
     m_window = SDL_CreateWindow(title.c_str(), x, y, width, height, SDL_WINDOW_OPENGL);
+#endif
 
     return YDS_ERROR_RETURN(ysError::None);
 }

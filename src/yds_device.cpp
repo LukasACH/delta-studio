@@ -39,32 +39,31 @@ ysError ysDevice::CreateDevice(ysDevice **newDevice, DeviceAPI API) {
     if (newDevice == nullptr) return YDS_ERROR_RETURN_STATIC(ysError::InvalidParameter);
     *newDevice = nullptr;
 
-    if (API == DeviceAPI::Unknown) return YDS_ERROR_RETURN_STATIC(ysError::InvalidParameter);
-
     switch(API) {
+#if GRAPHICS_D3D
     case DeviceAPI::DirectX10:
-#if PLATFORM_WIN32
-        *newDevice = CreateApiDevice<DeviceAPI::DirectX10>();
-#endif
+        *newDevice =
+                CreateApiDevice<DeviceAPI::DirectX10>();
         break;
+#endif
+#if GRAPHICS_D3D
     case DeviceAPI::DirectX11:
-#if PLATFORM_WIN32
         *newDevice = CreateApiDevice<DeviceAPI::DirectX11>();
-#endif
         break;
+#endif
+#if GRAPHICS_OPENGL
     case DeviceAPI::OpenGL4_0:
-#if PLATFORM_SDL
         *newDevice = CreateApiDevice<DeviceAPI::OpenGL4_0>();
-#endif
         break;
+#endif
+#if GRAPHICS_VULKAN
     case DeviceAPI::Vulkan:
-#if PLATFORM_WIN32
         *newDevice = CreateApiDevice<DeviceAPI::Vulkan>();
-#endif
         break;
+#endif
+        default:
+            return YDS_ERROR_RETURN_STATIC(ysError::NoPlatform);
     }
-
-    if (*newDevice == nullptr) return YDS_ERROR_RETURN_STATIC(ysError::NoPlatform);
 
     return YDS_ERROR_RETURN_STATIC(ysError::None);
 }

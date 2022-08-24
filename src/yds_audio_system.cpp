@@ -17,9 +17,7 @@ ysAudioSystem::ysAudioSystem(API api) : ysAudioSystemObject("AUDIO_SYSTEM", api)
     /* void */
 }
 
-ysAudioSystem::~ysAudioSystem() {
-    /* void */
-}
+ysAudioSystem::~ysAudioSystem() = default;
 
 ysError ysAudioSystem::CreateAudioSystem(ysAudioSystem **newAudioSystem, API api) {
     YDS_ERROR_DECLARE("CreateAudioSystem");
@@ -27,19 +25,19 @@ ysError ysAudioSystem::CreateAudioSystem(ysAudioSystem **newAudioSystem, API api
     if (newAudioSystem == nullptr) return YDS_ERROR_RETURN_STATIC(ysError::InvalidParameter);
     *newAudioSystem = nullptr;
 
-    if (api == API::Undefined) return YDS_ERROR_RETURN_STATIC(ysError::InvalidParameter);
-
     switch (api) {
-    case API::DirectSound8:
 #if PLATFORM_WIN32
-        *newAudioSystem = new ysDS8System();
+        case API::DirectSound8:
+            *newAudioSystem = new ysDS8System();
+            break;
 #endif
-        break;
-    case API::Sdl:
 #if PLATFORM_SDL
-        *newAudioSystem = new ysSdlAudioSystem();
+        case API::Sdl:
+            *newAudioSystem = new ysSdlAudioSystem();
+            break;
 #endif
-        break;
+        default:
+            return YDS_ERROR_RETURN_STATIC(ysError::InvalidParameter);
     }
 
     if (*newAudioSystem == nullptr) return YDS_ERROR_RETURN_STATIC(ysError::NoPlatform);
